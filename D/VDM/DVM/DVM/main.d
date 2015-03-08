@@ -1,6 +1,7 @@
 ﻿module main;
 
 import std.stdio;
+import std.file;
 import std.format;
 import std.exception;
 import std.conv;
@@ -11,8 +12,6 @@ private:
 	alias int REGISTER;
 	alias int VM_WORD;
 	alias int ADDRES;
-
-	VM_WORD[] program;
 
 	static const int MEMORY_SIZE = 100;
 
@@ -56,7 +55,11 @@ private:
 
 	void loadProgram(VM_WORD[] prog)
 	{
-		program = prog;
+		int i = 0;
+		foreach(command; prog)
+		{
+			memory[i++] = command;
+		}
 	}
 
 	// MEMORY ACCESS
@@ -200,12 +203,16 @@ private:
 	{
 		if (A < 0)
 			I = getPhysicalAddres(addr);
+		else
+			++I;
 	}
 
 	void BRANCHZERO(ADDRES addr)
 	{
 		if (A == 0)
 			I = getPhysicalAddres(addr);
+		else
+			++I;
 	}
 
 	// HALT is implemented in main switch as return statement
@@ -261,59 +268,77 @@ public:
 
 	void execute()
 	{
-		foreach (VM_WORD word; program)
+		while (true)
 		{
+			VM_WORD word = memory[I];
+			writeln("Instruction: ", I, " WORD: ", word);
 			auto command = (word / 100 > 0) ? (word / 100) : -(word / 100);
 			auto addr = word % 100;
 			switch (command)
 			{
 				case COMMAND.READ:
 					READ(addr);
+					++I;
 					break;
 				case COMMAND.WRITE:
 					WRITE(addr);
+					++I;
 					break;
 				case COMMAND.LOAD:
 					LOAD(addr);
+					++I;
 					break;
 				case COMMAND.STORE:
 					STORE(addr);
+					++I;
 					break;
 				case COMMAND.LOADTOP:
 					LOADTOP();
+					++I;
 					break;
 				case COMMAND.STORETOP:
 					STORETOP();
+					++I;
 					break;
 				case COMMAND.LOADBIAS:
 					LOADBIAS();
+					++I;
 					break;
 				case COMMAND.STOREBIAS:
 					STOREBIAS();
+					++I;
 					break;
 				case COMMAND.PUSH:
 					PUSH();
+					++I;
 					break;
 				case COMMAND.POP:
 					POP();
+					++I;
 					break;
 				case COMMAND.ADD:
 					ADD(addr);
+					++I;
 					break;
 				case COMMAND.SUBTRACT:
 					SUBTRACT(addr);
+					++I;
 					break;
 				case COMMAND.DIVIDE:
 					DIVIDE(addr);
+					++I;
 					break;
 				case COMMAND.MULTIPLY:
 					MULTIPLY(addr);
+					++I;
 					break;
 				case COMMAND.MOD:
 					MOD(addr);
+					++I;
 					break;
 				case COMMAND.LITERAL:
 					LITERAL(addr);
+					++I;
 					break;
 				case COMMAND.BRANCH:
 					BRANCH(addr);
@@ -338,19 +363,34 @@ public:
 	}
 }
 
+int[] parseCode(string code)
+{
+	int[] program;
+	string word = "+4300";
+	while (code != "" && word[1 .. 2] != "43")
+	{
+		word = code[0 .. 5];
+		code = code[6 .. $];
+		program ~= to!int(word);
+	}
+	return program;
+}
+
 void main(string[] args)
 {
+	writeln(args);
 	auto machine = new VM;
-	int[] program = [+1007, 
-		             +1008, 
-		             +2007, 
-		             +3008, 
-		             +2109, 
-		             +1109, 
-		             +4300];
+	string line, text;
+	auto file = File(args[1], "r");
+	while ((line = file.readln()) !is null)
+		text ~= line;
+	writeln(text);
+	int[] program = parseCode(text);
 
+	writeln("====== START PROGRAM ======");
 	machine.loadProgram(program);
 	machine.execute();
+	writeln("==== PROGRAM COMPLETED ====");
 	machine.memoryDump();
-	stdin.readln();
+	readln();
 }
