@@ -1,5 +1,8 @@
 *.sln
 *.userprefs
 *.dproj
+*.o
+D/VDM/DVM/DVM/bin
+D/VDM/DVM/DVM/obj
 D/Facultative/Facultative/bin
 D/Facultative/Facultative/obj
