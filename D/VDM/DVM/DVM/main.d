@@ -271,10 +271,10 @@ public:
 		while (true)
 		{
 			VM_WORD word = memory[I];
-			writeln("Instruction: ", I, " WORD: ", word);
+			// writeln("Instruction: ", I, " WORD: ", word);
 			auto command = (word / 100 > 0) ? (word / 100) : -(word / 100);
 			auto addr = word % 100;
-			switch (command)
+			final switch (command)
 			{
 				case COMMAND.READ:
 					READ(addr);
@@ -357,7 +357,6 @@ public:
 				case COMMAND.RETURN:
 					RETURN(addr);
 					break;
-				default:
 			}
 		}
 	}
@@ -366,8 +365,8 @@ public:
 int[] parseCode(string code)
 {
 	int[] program;
-	string word = "+4300";
-	while (code != "" && word[1 .. 2] != "43")
+	string word = "+0000";
+	while (code != "")
 	{
 		word = code[0 .. 5];
 		code = code[6 .. $];
