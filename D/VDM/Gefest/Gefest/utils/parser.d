@@ -14,13 +14,11 @@ enum SType
 struct Symbol
 {
 	SType type;
-	string value;
 	int addres;
 	
-	this(SType type = SType.undefined, string value = "", int addres = -1)
+	this(SType type = SType.undefined, int addres = -1)
 	{
 		this.type = type;
-		this.value = value;
 		this.addres = addres;
 	}
 }
@@ -56,73 +54,192 @@ public:
 		auto lines = splitLines(text);
 		foreach(string line; lines)
 		{
-			// writeln(line);
+			// std.stdio.writeln(line);
 			auto terms = split(line);
 			
 			auto cmd_n = terms[0];
 			auto cmd = terms[1];
-			
+
+			std.stdio.writeln(cmd_n ~ " " ~ cmd);
+
 			switch(cmd)
 			{
-				case "rem":
-					symbol_table[cmd_n] = Symbol(SType.label, cmd_n, I);
+				case "rem": // [cmd_n] rem [comment]
+					symbol_table[cmd_n] = Symbol(SType.label, I);
 					break;
 					
-				case "var":
-					symbol_table[cmd_n] = Symbol(SType.label, cmd_n, I);
+				case "var": // var [variable_name]
+					symbol_table[cmd_n] = Symbol(SType.label, I);
 					auto var_name = terms[2];
-					Symbol* temp = var_name in symbol_table;
-					if (temp is null)
+					if ((var_name in symbol_table) is null)
 					{
-						symbol_table[var_name] = Symbol(SType.var, var_name, V);
+						symbol_table[var_name] = Symbol(SType.var, V);
 						V--;
 					}
 					break;
 					
-				case "input":
-					symbol_table[cmd_n] = Symbol(SType.label, cmd_n, I);
+				case "input": // input [variable_name]
+					symbol_table[cmd_n] = Symbol(SType.label, I);
 					command[I] = 1000;
 					auto var_name = terms[2];
-					Symbol* temp = var_name in symbol_table;
-					if (temp is null)
+					if ((var_name in symbol_table) is null)
 					{
-						throw new Exception("Undefined variable");
+						throw new Exception("Undefined variable" ~ var_name);
 					}
 					argument[I] = var_name;
 					I++;
 					break;
 					
-				case "print":
-					symbol_table[cmd_n] = Symbol(SType.label, cmd_n, I);
+				case "print": // print [variable_name]
+					symbol_table[cmd_n] = Symbol(SType.label, I);
 					command[I] = 1100;
 					auto var_name = terms[2];
-					Symbol* temp = var_name in symbol_table;
-					if (temp is null)
+					if ((var_name in symbol_table) is null)
 					{
-						throw new Exception("Undefined variable");
+						throw new Exception("Undefined variable" ~ var_name);
 					}
 					argument[I] = var_name;
 					I++;
 					break;
 					
-				case "goto":
-					symbol_table[cmd_n] = Symbol(SType.label, cmd_n, I);
+				case "goto": // goto [label]
+					symbol_table[cmd_n] = Symbol(SType.label, I);
 					command[I] = 4000;
 					auto lbl_name = terms[2];
-					Symbol* temp = lbl_name in symbol_table;
-					if (temp is null || temp.type != SType.label)
+					if ((lbl_name in symbol_table) is null || (lbl_name in symbol_table).type != SType.label)
 					{
-						throw new Exception("Undefined label");
+						throw new Exception("Undefined label" ~ lbl_name);
 					}
 					argument[I] = lbl_name;
 					I++;
 					break;
+
+				case "if": /* if [variable_name] [compare_operator] [variable_name] goto [label]
+				            * compare_operator: <, >, <=, >=, !=, ==
+				            */
+					foreach(string term; terms)
+					{
+						std.stdio.writeln(term);
+					}
+
+					symbol_table[cmd_n] = Symbol(SType.label, I);
+					auto var1 = terms[2];
+					if ((var1 in symbol_table) is null)
+					{
+						throw new Exception("Undefined variable " ~ var1);
+					}
+
+					auto op = terms[3];
+
+					auto var2 = terms[4];
+					if ((var2 in symbol_table) is null)
+					{
+						throw new Exception("Undefined variable " ~ var2);
+					}
+
+					assert(terms[5] == "goto");
 					
-				case "end":
+					auto lbl = terms[6];
+					if ((lbl in symbol_table) is null)
+					{
+						symbol_table[lbl] = Symbol(SType.label, -1); // adress will be set later 
+					}
+
+					switch (op)
+					{
+						case "<":
+							command[I] = 2000;
+							argument[I] = var1;
+							I++;
+
+							command[I] = 3100;
+							argument[I] = var2;
+							I++;
+
+							command[I] = 4100;
+							argument[I] = lbl;
+							I++;
+							break;
+
+						case ">":
+							command[I] = 2000;
+							argument[I] = var2;
+							I++;
+							
+							command[I] = 3100;
+							argument[I] = var1;
+							I++;
+							
+							command[I] = 4100;
+							argument[I] = lbl;
+							I++;
+							break;
+
+						case "<=":
+							command[I] = 2000;
+							argument[I] = var1;
+							I++;
+							
+							command[I] = 3100;
+							argument[I] = var2;
+							I++;
+							
+							command[I] = 4100;
+							argument[I] = lbl;
+							I++;
+
+							command[I] = 4200;
+							argument[I] = lbl;
+							I++;
+							break;
+
+						case ">=":
+							command[I] = 2000;
+							argument[I] = var2;
+							I++;
+							
+							command[I] = 3100;
+							argument[I] = var1;
+							I++;
+							
+							command[I] = 4100;
+							argument[I] = lbl;
+							I++;
+							
+							command[I] = 4200;
+							argument[I] = lbl;
+							I++;
+							break;
+
+						case "!=":
+							throw new Exception("!= not implemented");
+
+						case "==":
+							command[I] = 2000;
+							argument[I] = var1;
+							I++;
+							
+							command[I] = 3100;
+							argument[I] = var2;
+							I++;
+							
+							command[I] = 4200;
+							argument[I] = lbl;
+							I++;
+							break;
+					}
+					break;
+
+				case "end": // end
 					command[I] = 4300;
 					I++;
 					break;
 			}
+		}
+
+		foreach(string name, Symbol symbol; symbol_table)
+		{
+			std.stdio.writeln(name ~ " -> " ~ to!string(symbol.addres));
 		}
 
 		for (auto i = 0; i < I; ++i)
